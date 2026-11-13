@@ -1,0 +1,118 @@
+!
+version 12.4
+no service timestamps log datetime msec
+no service timestamps debug datetime msec
+service password-encryption
+!
+hostname ISP_ESP
+!
+!
+!
+enable secret 5 $1$mERr$fBaXjm2.kecaix7xw5drY1
+!
+!
+!
+!
+!
+!
+no ip cef
+no ipv6 cef
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+no ip domain-lookup
+ip domain-name sslmjp.net
+!
+!
+spanning-tree mode pvst
+!
+!
+!
+!
+!
+!
+interface Loopback0
+ ip address 86.106.81.244 255.255.255.255
+!
+interface FastEthernet0/0
+ no ip address
+ duplex auto
+ speed auto
+ shutdown
+!
+interface FastEthernet0/1
+ no ip address
+ duplex auto
+ speed auto
+ shutdown
+!
+interface Serial0/0/0
+ description Enlace a ISP_NET (EIGRP)
+ ip address 86.106.81.14 255.255.255.252
+!
+interface Serial0/0/1
+ description Enlace a ISP_FL (OSPF)
+ ip address 86.106.81.22 255.255.255.252
+!
+interface Serial0/2/0
+ description Enlace a R2_ESP (cliente Madrid)
+ ip address 86.106.81.25 255.255.255.252
+ clock rate 2000000
+!
+interface Serial0/2/1
+ no ip address
+ clock rate 2000000
+ shutdown
+!
+interface Vlan1
+ no ip address
+ shutdown
+!
+router eigrp 55
+ redistribute ospf 1 metric 1544 2000 255 1 1500 
+ passive-interface Serial0/2/0
+ network 86.106.81.12 0.0.0.3
+ network 86.106.81.24 0.0.0.3
+ no auto-summary
+!
+router ospf 1
+ router-id 86.106.81.244
+ log-adjacency-changes
+ redistribute eigrp 55 subnets 
+ network 86.106.81.20 0.0.0.3 area 0
+!
+ip classless
+!
+ip flow-export version 9
+!
+!
+!
+banner motd #Acceso restringido - Proyecto Final RCD - Equipo 5#
+!
+!
+!
+!
+!
+line con 0
+ password 7 08134F4A25100B12405B5E52
+ logging synchronous
+ login
+!
+line aux 0
+!
+line vty 0 4
+ password 7 08134F4A25100B12405B5E52
+ login
+!
+!
+!
+end

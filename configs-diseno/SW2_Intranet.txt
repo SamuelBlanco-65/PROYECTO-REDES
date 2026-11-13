@@ -1,0 +1,78 @@
+enable
+configure terminal
+hostname SW2_Intranet
+no ip domain-lookup
+ip domain-name sslmjp.net
+enable secret RcdClass2026
+service password-encryption
+banner motd #Acceso restringido - Proyecto Final RCD - Equipo 5#
+line console 0
+password RcdLine2026
+login
+logging synchronous
+exit
+line vty 0 4
+password RcdLine2026
+login
+exit
+vlan 10
+name GUEST_BOG
+exit
+vlan 20
+name INTERNAL_BOG
+exit
+vlan 30
+name SRV_PRN_BOG
+exit
+vlan 99
+name NATIVE_BOG
+exit
+spanning-tree mode rapid-pvst
+interface FastEthernet0/1
+switchport mode trunk
+switchport trunk native vlan 99
+switchport trunk allowed vlan 10,20,30,99
+switchport nonegotiate
+no shutdown
+exit
+interface FastEthernet0/2
+switchport mode trunk
+switchport trunk native vlan 99
+switchport trunk allowed vlan 10,20,30,99
+switchport nonegotiate
+no shutdown
+exit
+interface FastEthernet0/10
+description DHCP_Server
+switchport mode access
+switchport access vlan 30
+spanning-tree portfast
+spanning-tree bpduguard enable
+no shutdown
+exit
+interface FastEthernet0/11
+description PC1 invitado
+switchport mode access
+switchport access vlan 10
+spanning-tree portfast
+spanning-tree bpduguard enable
+no shutdown
+exit
+interface FastEthernet0/12
+description PC2 interno
+switchport mode access
+switchport access vlan 20
+spanning-tree portfast
+spanning-tree bpduguard enable
+no shutdown
+exit
+interface Vlan30
+description Gestion (SNMP)
+ip address 172.16.5.136 255.255.255.240
+no shutdown
+exit
+ip default-gateway 172.16.5.129
+snmp-server community RCD_RO RO
+snmp-server community RCD_RW RW
+end
+write memory

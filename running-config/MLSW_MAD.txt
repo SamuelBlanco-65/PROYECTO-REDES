@@ -1,0 +1,244 @@
+!
+version 16.3.2
+no service timestamps log datetime msec
+no service timestamps debug datetime msec
+service password-encryption
+!
+hostname MLSW_MAD
+!
+!
+no profinet
+enable secret 5 $1$mERr$fBaXjm2.kecaix7xw5drY1
+!
+!
+!
+!
+!
+!
+no ip cef
+ip routing
+!
+ipv6 unicast-routing
+!
+no ipv6 cef
+!
+ipv6 dhcp pool DHCPV6-MAD-G40
+ address prefix 2001:1200:EB25:40::/64 lifetime 172800 86400
+ dns-server 2001:1200:EC15:1::53
+ domain-name sslmjp.net
+!
+ipv6 dhcp pool DHCPV6-MAD-I50
+ address prefix 2001:1200:EB25:50::/64 lifetime 172800 86400
+ dns-server 2001:1200:EC15:1::53
+ domain-name sslmjp.net
+!
+ipv6 dhcp pool DHCPV6-MAD-S60
+ dns-server 2001:1200:EC15:1::53
+ domain-name sslmjp.net
+!
+!
+!
+username admin privilege 15 secret 5 $1$mERr$fBaXjm2.kecaix7xw5drY1
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+ip ssh version 2
+no ip domain-lookup
+ip domain-name sslmjp.net
+!
+!
+spanning-tree mode rapid-pvst
+spanning-tree vlan 40,50,60,98 priority 24576
+!
+!
+!
+!
+!
+!
+interface Loopback0
+ description Gestion / router-id
+ ip address 10.255.5.3 255.255.255.255
+ ipv6 address 2001:1200:ED15::3/128
+ ipv6 ospf 10 area 0
+!
+interface GigabitEthernet1/0/1
+ description Enlace enrutado a R2_ESP
+ no switchport
+ ip address 172.16.5.166 255.255.255.252
+ duplex auto
+ speed auto
+ ipv6 address FE80::3 link-local
+ ipv6 address 2001:1200:ED25:1::2/64
+ ipv6 ospf 10 area 0
+!
+interface GigabitEthernet1/0/2
+ description Trunk a SW4/SW5
+ switchport trunk native vlan 98
+ switchport trunk allowed vlan 40,50,60,98
+ switchport mode trunk
+ switchport nonegotiate
+!
+interface GigabitEthernet1/0/3
+ description Trunk a SW4/SW5
+ switchport trunk native vlan 98
+ switchport trunk allowed vlan 40,50,60,98
+ switchport mode trunk
+ switchport nonegotiate
+!
+interface GigabitEthernet1/0/4
+!
+interface GigabitEthernet1/0/5
+!
+interface GigabitEthernet1/0/6
+!
+interface GigabitEthernet1/0/7
+!
+interface GigabitEthernet1/0/8
+!
+interface GigabitEthernet1/0/9
+!
+interface GigabitEthernet1/0/10
+!
+interface GigabitEthernet1/0/11
+!
+interface GigabitEthernet1/0/12
+!
+interface GigabitEthernet1/0/13
+!
+interface GigabitEthernet1/0/14
+!
+interface GigabitEthernet1/0/15
+!
+interface GigabitEthernet1/0/16
+!
+interface GigabitEthernet1/0/17
+!
+interface GigabitEthernet1/0/18
+!
+interface GigabitEthernet1/0/19
+!
+interface GigabitEthernet1/0/20
+!
+interface GigabitEthernet1/0/21
+!
+interface GigabitEthernet1/0/22
+!
+interface GigabitEthernet1/0/23
+!
+interface GigabitEthernet1/0/24
+!
+interface GigabitEthernet1/1/1
+!
+interface GigabitEthernet1/1/2
+!
+interface GigabitEthernet1/1/3
+!
+interface GigabitEthernet1/1/4
+!
+interface Vlan1
+ no ip address
+ shutdown
+!
+interface Vlan40
+ description GUEST_MAD
+ mac-address 00e0.f7cc.eb01
+ ip address 172.16.5.65 255.255.255.224
+ ip helper-address 172.16.5.130
+ ipv6 address FE80::3 link-local
+ ipv6 address 2001:1200:EB25:40::1/64
+ ipv6 nd other-config-flag
+ ipv6 nd managed-config-flag
+ ipv6 ospf 10 area 0
+ ipv6 dhcp server DHCPV6-MAD-G40
+ ip access-group SNMP-BLOCK in
+!
+interface Vlan50
+ description INTERNAL_MAD
+ mac-address 00e0.f7cc.eb02
+ ip address 172.16.5.97 255.255.255.224
+ ip helper-address 172.16.5.130
+ ipv6 address FE80::3 link-local
+ ipv6 address 2001:1200:EB25:50::1/64
+ ipv6 nd other-config-flag
+ ipv6 nd managed-config-flag
+ ipv6 ospf 10 area 0
+ ipv6 dhcp server DHCPV6-MAD-I50
+ ip access-group SNMP-INT-MAD in
+!
+interface Vlan60
+ description SRV_PRN_MAD
+ mac-address 00e0.f7cc.eb03
+ ip address 172.16.5.145 255.255.255.240
+ ipv6 address FE80::3 link-local
+ ipv6 address 2001:1200:EB25:60::1/64
+ ipv6 nd other-config-flag
+ ipv6 ospf 10 area 0
+ ipv6 dhcp server DHCPV6-MAD-S60
+ ip access-group SNMP-BLOCK in
+!
+router ospf 10
+ router-id 3.3.3.3
+ log-adjacency-changes
+ passive-interface Vlan40
+ passive-interface Vlan50
+ passive-interface Vlan60
+ network 172.16.5.64 0.0.0.31 area 0
+ network 172.16.5.96 0.0.0.31 area 0
+ network 172.16.5.144 0.0.0.15 area 0
+ network 172.16.5.164 0.0.0.3 area 0
+ network 10.255.5.3 0.0.0.0 area 0
+!
+ipv6 router ospf 10
+ router-id 3.3.3.3
+ log-adjacency-changes
+!
+ip classless
+!
+ip flow-export version 9
+!
+!
+ip access-list extended SNMP-BLOCK
+ remark Bloquea SNMP desde VLAN no autorizadas
+ deny udp any any eq snmp
+ deny udp any any eq 162
+ permit ip any any
+ip access-list extended SNMP-INT-MAD
+ remark VLAN interna: SNMP solo hacia su propia intranet
+ permit udp any 172.16.5.64 0.0.0.63 eq snmp
+ permit udp any 172.16.5.144 0.0.0.15 eq snmp
+ permit udp any 172.16.5.164 0.0.0.3 eq snmp
+ permit udp any host 10.255.5.2 eq snmp
+ permit udp any host 10.255.5.3 eq snmp
+ deny udp any any eq snmp
+ deny udp any any eq 162
+ permit ip any any
+!
+banner motd #Acceso restringido - Proyecto Final RCD - Equipo 5#
+!
+!
+!
+snmp-server community RCD_RO RO
+snmp-server community RCD_RW RW
+!
+line con 0
+ password 7 08134F4A25100B12405B5E52
+ logging synchronous
+ login
+!
+line aux 0
+!
+line vty 0 4
+ login local
+ transport input ssh
+!
+!
+!
+!
+end

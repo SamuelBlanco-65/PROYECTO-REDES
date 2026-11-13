@@ -1,0 +1,249 @@
+!
+version 12.4
+no service timestamps log datetime msec
+no service timestamps debug datetime msec
+service password-encryption
+!
+hostname R1_BOG
+!
+!
+!
+enable secret 5 $1$mERr$fBaXjm2.kecaix7xw5drY1
+!
+!
+!
+!
+!
+!
+no ip cef
+ipv6 unicast-routing
+!
+no ipv6 cef
+!
+ipv6 dhcp pool DHCPV6-BOG-G10
+ address prefix 2001:1200:EA15:10::/64 lifetime 172800 86400
+ dns-server 2001:1200:EC15:1::53
+ domain-name sslmjp.net
+!
+ipv6 dhcp pool DHCPV6-BOG-I20
+ address prefix 2001:1200:EA15:20::/64 lifetime 172800 86400
+ dns-server 2001:1200:EC15:1::53
+ domain-name sslmjp.net
+!
+ipv6 dhcp pool DHCPV6-BOG-S30
+ dns-server 2001:1200:EC15:1::53
+ domain-name sslmjp.net
+!
+!
+!
+username admin privilege 15 secret 5 $1$mERr$fBaXjm2.kecaix7xw5drY1
+!
+!
+crypto isakmp policy 10
+ encr aes 256
+ authentication pre-share
+ group 5
+!
+crypto isakmp key RcdVpnKey2026 address 86.106.81.26
+!
+!
+!
+crypto ipsec transform-set TS-RCD esp-aes 256 esp-sha-hmac
+!
+crypto map VPN-RCD 10 ipsec-isakmp 
+ set peer 86.106.81.26
+ set transform-set TS-RCD 
+ match address 110
+!
+!
+!
+!
+!
+!
+ip ssh version 2
+no ip domain-lookup
+ip domain-name sslmjp.net
+!
+!
+spanning-tree mode pvst
+!
+!
+!
+!
+!
+!
+interface Loopback0
+ description Gestion / router-id
+ ip address 10.255.5.1 255.255.255.255
+ ipv6 address 2001:1200:ED15::1/128
+ ipv6 ospf 10 area 0
+!
+interface Tunnel0
+ ip address 172.16.5.161 255.255.255.252
+ mtu 1476
+ tunnel source Serial0/0/0
+ tunnel destination 86.106.81.26
+!
+!
+interface Tunnel1
+ no ip address
+ mtu 1476
+ ipv6 address 2001:1200:EC15:FF::1/64
+ ipv6 ospf 10 area 0
+ tunnel source Serial0/0/0
+ tunnel destination 86.106.81.26
+ tunnel mode ipv6ip
+!
+!
+interface FastEthernet0/0
+ description DMZ (solo IPv6)
+ no ip address
+ ipv6 traffic-filter WEB-POLICY out
+ duplex auto
+ speed auto
+ ipv6 address FE80::1 link-local
+ ipv6 address 2001:1200:EC15:1::1/64
+ ipv6 ospf 10 area 0
+!
+interface FastEthernet0/1
+ description Trunk a SW1_Intranet
+ no ip address
+ duplex auto
+ speed auto
+!
+interface FastEthernet0/1.10
+ description VLAN 10 GUEST_BOG
+ encapsulation dot1Q 10
+ ip address 172.16.5.1 255.255.255.224
+ ip helper-address 172.16.5.130
+ ip access-group SNMP-BLOCK in
+ ipv6 address FE80::1 link-local
+ ipv6 address 2001:1200:EA15:10::1/64
+ ipv6 nd other-config-flag
+ ipv6 nd managed-config-flag
+ ipv6 ospf 10 area 0
+ ipv6 dhcp server DHCPV6-BOG-G10
+!
+interface FastEthernet0/1.20
+ description VLAN 20 INTERNAL_BOG
+ encapsulation dot1Q 20
+ ip address 172.16.5.33 255.255.255.224
+ ip helper-address 172.16.5.130
+ ip access-group SNMP-INT-BOG in
+ ipv6 address FE80::1 link-local
+ ipv6 address 2001:1200:EA15:20::1/64
+ ipv6 nd other-config-flag
+ ipv6 nd managed-config-flag
+ ipv6 ospf 10 area 0
+ ipv6 dhcp server DHCPV6-BOG-I20
+!
+interface FastEthernet0/1.30
+ description VLAN 30 SRV_PRN_BOG
+ encapsulation dot1Q 30
+ ip address 172.16.5.129 255.255.255.240
+ ip access-group SNMP-BLOCK in
+ ipv6 address FE80::1 link-local
+ ipv6 address 2001:1200:EA15:30::1/64
+ ipv6 nd other-config-flag
+ ipv6 ospf 10 area 0
+ ipv6 dhcp server DHCPV6-BOG-S30
+!
+interface FastEthernet0/1.99
+ description VLAN 99 NATIVE_BOG
+ encapsulation dot1Q 99 native
+ no ip address
+!
+interface Serial0/0/0
+ description WAN a ISP_BOG (Internet IPv4)
+ ip address 86.106.81.2 255.255.255.252
+ crypto map VPN-RCD
+!
+interface Serial0/0/1
+ no ip address
+ clock rate 2000000
+ shutdown
+!
+interface Serial0/2/0
+ no ip address
+ clock rate 2000000
+ shutdown
+!
+interface Serial0/2/1
+ no ip address
+ clock rate 2000000
+ shutdown
+!
+interface Vlan1
+ no ip address
+ shutdown
+!
+router ospf 10
+ router-id 1.1.1.1
+ log-adjacency-changes
+ passive-interface FastEthernet0/1.10
+ passive-interface FastEthernet0/1.20
+ passive-interface FastEthernet0/1.30
+ network 172.16.5.0 0.0.0.31 area 0
+ network 172.16.5.32 0.0.0.31 area 0
+ network 172.16.5.128 0.0.0.15 area 0
+ network 172.16.5.160 0.0.0.3 area 0
+ network 10.255.5.1 0.0.0.0 area 0
+!
+ipv6 router ospf 10
+ router-id 1.1.1.1
+ log-adjacency-changes
+!
+ip classless
+ip route 0.0.0.0 0.0.0.0 86.106.81.1 
+!
+ip flow-export version 9
+!
+!
+access-list 110 remark Trafico de los tuneles GRE y 6in4 protegido por IPsec
+access-list 110 permit ip host 86.106.81.2 host 86.106.81.26
+ip access-list extended SNMP-BLOCK
+ remark Bloquea SNMP desde VLAN no autorizadas
+ deny udp any any eq snmp
+ deny udp any any eq 162
+ permit ip any any
+ip access-list extended SNMP-INT-BOG
+ remark VLAN interna: SNMP solo hacia su propia intranet
+ permit udp any 172.16.5.0 0.0.0.63 eq snmp
+ permit udp any 172.16.5.128 0.0.0.15 eq snmp
+ permit udp any host 10.255.5.1 eq snmp
+ deny udp any any eq snmp
+ deny udp any any eq 162
+ permit ip any any
+ipv6 access-list WEB-POLICY
+ permit tcp 2001:1200:EA15:10::/64 host 2001:1200:EC15:1::10 eq www
+ deny tcp 2001:1200:EA15:10::/64 host 2001:1200:EC15:1::10 eq 443
+ permit tcp 2001:1200:EA15:20::/64 host 2001:1200:EC15:1::10 eq 443
+ deny tcp 2001:1200:EA15:20::/64 host 2001:1200:EC15:1::10 eq www
+ permit tcp 2001:1200:EB25:40::/64 host 2001:1200:EC15:1::10 eq www
+ deny tcp 2001:1200:EB25:40::/64 host 2001:1200:EC15:1::10 eq 443
+ permit tcp 2001:1200:EB25:50::/64 host 2001:1200:EC15:1::10 eq 443
+ deny tcp 2001:1200:EB25:50::/64 host 2001:1200:EC15:1::10 eq www
+ permit ipv6 any any
+!
+banner motd #Acceso restringido - Proyecto Final RCD - Equipo 5#
+!
+!
+!
+!
+snmp-server community RCD_RO RO
+snmp-server community RCD_RW RW
+!
+line con 0
+ password 7 08134F4A25100B12405B5E52
+ logging synchronous
+ login
+!
+line aux 0
+!
+line vty 0 4
+ login local
+ transport input ssh
+!
+!
+!
+end

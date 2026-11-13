@@ -1,0 +1,95 @@
+enable
+configure terminal
+hostname R2_ESP
+no ip domain-lookup
+ip domain-name sslmjp.net
+enable secret RcdClass2026
+service password-encryption
+banner motd #Acceso restringido - Proyecto Final RCD - Equipo 5#
+line console 0
+password RcdLine2026
+login
+logging synchronous
+exit
+username admin privilege 15 secret RcdClass2026
+crypto key generate rsa general-keys modulus 1024
+ip ssh version 2
+line vty 0 4
+login local
+transport input ssh
+exit
+ipv6 unicast-routing
+interface Loopback0
+description Gestion / router-id
+ip address 10.255.5.2 255.255.255.255
+ipv6 address 2001:1200:ED15::2/128
+exit
+interface FastEthernet0/0
+description Enlace enrutado a MLSW_MAD
+ip address 172.16.5.165 255.255.255.252
+ipv6 address 2001:1200:ED25:1::1/64
+ipv6 address FE80::2 link-local
+no shutdown
+exit
+interface Serial0/2/0
+description WAN a ISP_ESP (Internet IPv4)
+ip address 86.106.81.26 255.255.255.252
+no shutdown
+exit
+interface Tunnel0
+ip address 172.16.5.162 255.255.255.252
+tunnel source Serial0/2/0
+tunnel destination 86.106.81.2
+tunnel mode gre ip
+no shutdown
+exit
+interface Tunnel1
+ipv6 address 2001:1200:EC15:FF::2/64
+ipv6 address FE80::2 link-local
+tunnel source Serial0/2/0
+tunnel destination 86.106.81.2
+tunnel mode ipv6ip
+no shutdown
+exit
+crypto isakmp policy 10
+encryption aes 256
+hash sha
+authentication pre-share
+group 5
+lifetime 86400
+exit
+crypto isakmp key RcdVpnKey2026 address 86.106.81.2
+crypto ipsec transform-set TS-RCD esp-aes 256 esp-sha-hmac
+access-list 110 remark Trafico de los tuneles GRE y 6in4 protegido por IPsec
+access-list 110 permit ip host 86.106.81.26 host 86.106.81.2
+crypto map VPN-RCD 10 ipsec-isakmp
+set peer 86.106.81.2
+set transform-set TS-RCD
+match address 110
+exit
+interface Serial0/2/0
+crypto map VPN-RCD
+exit
+ip route 0.0.0.0 0.0.0.0 86.106.81.25
+router ospf 10
+router-id 2.2.2.2
+network 172.16.5.164 0.0.0.3 area 0
+network 172.16.5.160 0.0.0.3 area 0
+network 10.255.5.2 0.0.0.0 area 0
+exit
+ipv6 router ospf 10
+router-id 2.2.2.2
+exit
+interface Loopback0
+ipv6 ospf 10 area 0
+exit
+interface FastEthernet0/0
+ipv6 ospf 10 area 0
+exit
+interface Tunnel1
+ipv6 ospf 10 area 0
+exit
+snmp-server community RCD_RO RO
+snmp-server community RCD_RW RW
+end
+write memory

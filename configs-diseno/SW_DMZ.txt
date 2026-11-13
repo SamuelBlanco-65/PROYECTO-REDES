@@ -1,0 +1,53 @@
+enable
+configure terminal
+hostname SW_DMZ
+no ip domain-lookup
+ip domain-name sslmjp.net
+enable secret RcdClass2026
+service password-encryption
+banner motd #Acceso restringido - Proyecto Final RCD - Equipo 5#
+line console 0
+password RcdLine2026
+login
+logging synchronous
+exit
+line vty 0 4
+password RcdLine2026
+login
+exit
+vlan 70
+name DMZ
+exit
+spanning-tree mode rapid-pvst
+interface GigabitEthernet0/1
+description Uplink R1_BOG Fa0/0
+switchport mode access
+switchport access vlan 70
+no shutdown
+exit
+interface FastEthernet0/1
+description Web_Server
+switchport mode access
+switchport access vlan 70
+spanning-tree portfast
+spanning-tree bpduguard enable
+no shutdown
+exit
+interface FastEthernet0/2
+description DNS_Server
+switchport mode access
+switchport access vlan 70
+spanning-tree portfast
+spanning-tree bpduguard enable
+no shutdown
+exit
+interface FastEthernet0/3
+description Tracker_Server
+switchport mode access
+switchport access vlan 70
+spanning-tree portfast
+spanning-tree bpduguard enable
+no shutdown
+exit
+end
+write memory

@@ -1,0 +1,44 @@
+enable
+configure terminal
+hostname ISP_FL
+no ip domain-lookup
+ip domain-name sslmjp.net
+enable secret RcdClass2026
+service password-encryption
+banner motd #Acceso restringido - Proyecto Final RCD - Equipo 5#
+line console 0
+password RcdLine2026
+login
+logging synchronous
+exit
+line vty 0 4
+password RcdLine2026
+login
+exit
+interface Serial0/0/0
+description Enlace a ISP_BOG (OSPF)
+ip address 86.106.81.10 255.255.255.252
+no shutdown
+exit
+interface Serial0/0/1
+description Enlace a ISP_NET (OSPF)
+ip address 86.106.81.18 255.255.255.252
+no shutdown
+exit
+interface Serial0/2/0
+description Enlace a ISP_ESP (OSPF)
+ip address 86.106.81.21 255.255.255.252
+clock rate 2000000
+no shutdown
+exit
+interface Loopback0
+ip address 86.106.81.243 255.255.255.255
+exit
+router ospf 1
+router-id 86.106.81.243
+network 86.106.81.8 0.0.0.3 area 0
+network 86.106.81.16 0.0.0.3 area 0
+network 86.106.81.20 0.0.0.3 area 0
+exit
+end
+write memory

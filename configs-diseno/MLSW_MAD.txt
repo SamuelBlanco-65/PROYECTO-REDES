@@ -1,0 +1,155 @@
+enable
+configure terminal
+hostname MLSW_MAD
+no ip domain-lookup
+ip domain-name sslmjp.net
+enable secret RcdClass2026
+service password-encryption
+banner motd #Acceso restringido - Proyecto Final RCD - Equipo 5#
+line console 0
+password RcdLine2026
+login
+logging synchronous
+exit
+username admin privilege 15 secret RcdClass2026
+crypto key generate rsa general-keys modulus 1024
+ip ssh version 2
+line vty 0 4
+login local
+transport input ssh
+exit
+ip routing
+ipv6 unicast-routing
+vlan 40
+name GUEST_MAD
+exit
+vlan 50
+name INTERNAL_MAD
+exit
+vlan 60
+name SRV_PRN_MAD
+exit
+vlan 98
+name NATIVE_MAD
+exit
+spanning-tree mode rapid-pvst
+spanning-tree vlan 40,50,60,98 root primary
+ip access-list extended SNMP-BLOCK
+remark Bloquea SNMP desde VLAN no autorizadas
+deny udp any any eq snmp
+deny udp any any eq 162
+permit ip any any
+exit
+ip access-list extended SNMP-INT-MAD
+remark VLAN interna: SNMP solo hacia su propia intranet
+permit udp any 172.16.5.64 0.0.0.63 eq snmp
+permit udp any 172.16.5.144 0.0.0.15 eq snmp
+permit udp any 172.16.5.164 0.0.0.3 eq snmp
+permit udp any host 10.255.5.2 eq snmp
+permit udp any host 10.255.5.3 eq snmp
+deny udp any any eq snmp
+deny udp any any eq 162
+permit ip any any
+exit
+ipv6 dhcp pool DHCPV6-MAD-G40
+address prefix 2001:1200:EB25:40::/64 lifetime 172800 86400
+dns-server 2001:1200:EC15:1::53
+domain-name sslmjp.net
+exit
+ipv6 dhcp pool DHCPV6-MAD-I50
+address prefix 2001:1200:EB25:50::/64 lifetime 172800 86400
+dns-server 2001:1200:EC15:1::53
+domain-name sslmjp.net
+exit
+ipv6 dhcp pool DHCPV6-MAD-S60
+dns-server 2001:1200:EC15:1::53
+domain-name sslmjp.net
+exit
+interface Loopback0
+description Gestion / router-id
+ip address 10.255.5.3 255.255.255.255
+ipv6 address 2001:1200:ED15::3/128
+exit
+interface GigabitEthernet1/0/1
+description Enlace enrutado a R2_ESP
+no switchport
+ip address 172.16.5.166 255.255.255.252
+ipv6 address 2001:1200:ED25:1::2/64
+ipv6 address FE80::3 link-local
+no shutdown
+exit
+interface range GigabitEthernet1/0/2 - 3
+description Trunk a SW4/SW5
+switchport mode trunk
+switchport trunk native vlan 98
+switchport trunk allowed vlan 40,50,60,98
+switchport nonegotiate
+no shutdown
+exit
+interface Vlan40
+description GUEST_MAD
+ip address 172.16.5.65 255.255.255.224
+ip helper-address 172.16.5.130
+ip access-group SNMP-BLOCK in
+ipv6 address 2001:1200:EB25:40::1/64
+ipv6 address FE80::3 link-local
+ipv6 nd managed-config-flag
+ipv6 nd other-config-flag
+ipv6 dhcp server DHCPV6-MAD-G40
+no shutdown
+exit
+interface Vlan50
+description INTERNAL_MAD
+ip address 172.16.5.97 255.255.255.224
+ip helper-address 172.16.5.130
+ip access-group SNMP-INT-MAD in
+ipv6 address 2001:1200:EB25:50::1/64
+ipv6 address FE80::3 link-local
+ipv6 nd managed-config-flag
+ipv6 nd other-config-flag
+ipv6 dhcp server DHCPV6-MAD-I50
+no shutdown
+exit
+interface Vlan60
+description SRV_PRN_MAD
+ip address 172.16.5.145 255.255.255.240
+ip access-group SNMP-BLOCK in
+ipv6 address 2001:1200:EB25:60::1/64
+ipv6 address FE80::3 link-local
+ipv6 nd other-config-flag
+ipv6 dhcp server DHCPV6-MAD-S60
+no shutdown
+exit
+router ospf 10
+router-id 3.3.3.3
+network 172.16.5.64 0.0.0.31 area 0
+network 172.16.5.96 0.0.0.31 area 0
+network 172.16.5.144 0.0.0.15 area 0
+network 172.16.5.164 0.0.0.3 area 0
+network 10.255.5.3 0.0.0.0 area 0
+passive-interface Vlan40
+passive-interface Vlan50
+passive-interface Vlan60
+exit
+ipv6 router ospf 10
+router-id 3.3.3.3
+exit
+interface Loopback0
+ipv6 ospf 10 area 0
+exit
+interface GigabitEthernet1/0/1
+ipv6 ospf 10 area 0
+exit
+interface Vlan40
+ipv6 ospf 10 area 0
+exit
+interface Vlan50
+ipv6 ospf 10 area 0
+exit
+interface Vlan60
+ipv6 ospf 10 area 0
+exit
+snmp-server community RCD_RO RO
+snmp-server community RCD_RW RW
+end
+write memory
